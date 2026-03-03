@@ -58,31 +58,52 @@ export default function Dashboard() {
   const armorCount = items.filter(i => i.type === 'armor').length;
   const skillCount = items.filter(i => i.type === 'skill').length;
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resizeImage = (file: File, maxSize: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const avatarData = reader.result as string;
-      try {
-        const res = await fetch('/api/profile', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: profile?.title || '',
-            bio: profile?.bio || '',
-            links: profile?.links || [],
-            avatar_data: avatarData,
-          }),
-        });
-        if (res.ok) {
-          setProfile(prev => prev ? { ...prev, avatar_data: avatarData } : prev);
-        }
-      } catch (error) {
-        console.error('Failed to update avatar:', error);
+    const avatarData = await resizeImage(file, 256);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: profile?.title || '',
+          bio: profile?.bio || '',
+          links: profile?.links || [],
+          avatar_data: avatarData,
+        }),
+      });
+      if (res.ok) {
+        setProfile(prev => prev ? { ...prev, avatar_data: avatarData } : prev);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Failed to update avatar:', error);
+    }
   };
 
   const handleCopyStatus = () => {

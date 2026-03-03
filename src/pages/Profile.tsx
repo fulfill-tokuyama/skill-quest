@@ -47,21 +47,47 @@ export default function Profile() {
       if (res.ok) {
         setMessage('プロフィールを更新しました！');
         setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`保存に失敗しました (${res.status})`);
+        setTimeout(() => setMessage(''), 5000);
       }
     } catch (error) {
       console.error('Failed to save profile', error);
       setMessage('プロフィールの更新に失敗しました');
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resizeImage = (file: File, maxSize: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarData(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const resized = await resizeImage(file, 256);
+      setAvatarData(resized);
     }
   };
 
@@ -86,7 +112,7 @@ export default function Profile() {
       <h1 className="text-xl text-yellow-400 mb-6">プロフィール編集</h1>
       
       {message && (
-        <div className={`mb-4 p-2 text-center border ${message.includes('FAILED') ? 'border-red-500 text-red-400' : 'border-green-500 text-green-400'}`}>
+        <div className={`mb-4 p-2 text-center border ${message.includes('失敗') ? 'border-red-500 text-red-400' : 'border-green-500 text-green-400'}`}>
           {message}
         </div>
       )}
