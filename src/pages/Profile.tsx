@@ -36,8 +36,7 @@ export default function Profile() {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     try {
       const res = await fetch('/api/profile', {
         method: 'PUT',
@@ -118,7 +117,7 @@ export default function Profile() {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="rpg-box flex flex-col gap-6">
+      <div className="rpg-box flex flex-col gap-6">
         <div className="flex items-start gap-4">
           <div className="w-24 h-24 bg-gray-700 border-2 border-white shrink-0 overflow-hidden relative group">
             <img 
@@ -186,9 +185,9 @@ export default function Profile() {
         </div>
 
         <div className="flex justify-end mt-4">
-          <button type="submit" className="rpg-btn">変更を保存</button>
+          <button type="button" onClick={handleSave} className="rpg-btn">変更を保存</button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
